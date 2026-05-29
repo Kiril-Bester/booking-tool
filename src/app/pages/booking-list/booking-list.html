@@ -1,0 +1,284 @@
+<div class="fade-in">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="display-6 fw-bold mb-1">My Bookings</h1>
+      <p class="text-muted">View and manage all your reservations</p>
+    </div>
+    <button class="btn btn-primary rounded-pill px-4" routerLink="/resources">
+      <i class="bi bi-plus-circle me-2"></i>New Booking
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="currentTab === 'upcoming'" (click)="switchTab('upcoming')">
+        <i class="bi bi-calendar-check me-2"></i>Upcoming
+        <span class="badge bg-primary ms-2 rounded-pill">{{ upcomingCount }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="currentTab === 'past'" (click)="switchTab('past')">
+        <i class="bi bi-clock-history me-2"></i>Past
+        <span class="badge bg-secondary ms-2 rounded-pill">{{ pastCount }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="currentTab === 'cancelled'" (click)="switchTab('cancelled')">
+        <i class="bi bi-x-circle me-2"></i>Cancelled
+        <span class="badge bg-danger ms-2 rounded-pill">{{ cancelledCount }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Bookings List -->
+  <div *ngIf="filteredBookings.length > 0; else noBookings">
+    <div *ngFor="let booking of filteredBookings" class="card border-0 shadow-sm mb-3 hover-card">
+      <div class="card-body p-4">
+        <div class="row align-items-start">
+          <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-circle p-2" [class.bg-primary]="getStatusClass(booking) !== 'cancelled'" [class.bg-danger]="getStatusClass(booking) === 'cancelled'" [class.bg-opacity-10]="true">
+                <i class="bi bi-building fs-4" [class.text-primary]="getStatusClass(booking) !== 'cancelled'" [class.text-danger]="getStatusClass(booking) === 'cancelled'"></i>
+              </div>
+              <div>
+                <h5 class="mb-1 fw-bold">{{ booking.title || 'Untitled Booking' }}</h5>
+                <p class="mb-0 text-muted">{{ booking.resource?.name || 'Loading...' }}</p>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-5">
+                <div class="bg-light rounded-3 p-3">
+                  <div class="small text-muted mb-1">
+                    <i class="bi bi-calendar3 me-1"></i> START
+                  </div>
+                  <div class="fw-bold">{{ booking.start_time | date:'EEEE, MMMM d, y' }}</div>
+                  <div class="text-muted">{{ booking.start_time | date:'h:mm a' }}</div>
+                </div>
+              </div>
+              <div class="col-md-2 text-center d-none d-md-block">
+                <i class="bi bi-arrow-right fs-2 text-muted mt-4"></i>
+              </div>
+              <div class="col-md-5">
+                <div class="bg-light rounded-3 p-3">
+                  <div class="small text-muted mb-1">
+                    <i class="bi bi-calendar3 me-1"></i> END
+                  </div>
+                  <div class="fw-bold">{{ booking.end_time | date:'EEEE, MMMM d, y' }}</div>
+                  <div class="text-muted">{{ booking.end_time | date:'h:mm a' }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-3">
+              <span class="badge bg-info me-2">
+                <i class="bi bi-clock me-1"></i> Duration: {{ getDuration(booking) }}
+              </span>
+              <span class="badge bg-secondary">
+                <i class="bi bi-calendar-plus me-1"></i> Booked: {{ booking.created_at | date:'MMM d, y' }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="mb-3">
+              <span class="badge fs-6 p-2" 
+                    [class.bg-success]="getStatusClass(booking) === 'upcoming'"
+                    [class.bg-warning]="getStatusClass(booking) === 'in-progress'"
+                    [class.bg-secondary]="getStatusClass(booking) === 'completed'"
+                    [class.bg-danger]="getStatusClass(booking) === 'cancelled'">
+                <i class="bi me-1" [class]="getStatusIcon(booking)"></i>
+                {{ getStatusText(booking) }}
+              </span>
+            </div>
+            <div *ngIf="booking.status === 'active' && getStatusClass(booking) === 'upcoming'">
+              <button class="btn btn-outline-warning rounded-pill px-4" (click)="openCancelModal(booking)">
+                <i class="bi bi-x-circle me-2"></i>Cancel Booking
+              </button>
+              <button class="btn btn-outline-secondary rounded-pill px-4 ms-2" (click)="downloadICS(booking)">
+                <i class="bi bi-download me-2"></i>iCal
+              </button>
+            </div>
+            <div *ngIf="booking.status === 'active' && getStatusClass(booking) === 'in-progress'" class="text-muted">
+              <i class="bi bi-clock-history me-1"></i> In progress
+            </div>
+            <div *ngIf="booking.status === 'active' && getStatusClass(booking) === 'completed'" class="text-muted">
+              <i class="bi bi-check-circle me-1"></i> Completed
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noBookings>
+    <div class="text-center py-5">
+      <i class="bi bi-calendar-x display-1 text-muted"></i>
+      <h3 class="mt-3">No bookings found</h3>
+      <p class="text-muted">You haven't made any {{ currentTab }} bookings yet</p>
+      <button class="btn btn-primary rounded-pill px-4" routerLink="/resources">
+        Browse Resources
+      </button>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" style="display: none;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header border-0" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+        <div class="d-flex align-items-center">
+          <div class="rounded-circle bg-white bg-opacity-25 p-2 me-3">
+            <i class="bi bi-exclamation-triangle-fill text-white fs-4"></i>
+          </div>
+          <div>
+            <h5 class="modal-title text-white fw-bold">Cancel Booking</h5>
+            <p class="text-white-50 small mb-0">This action cannot be undone</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal('cancelBookingModal')"></button>
+      </div>
+      
+      <div class="modal-body p-4">
+        <div class="text-center mb-4">
+          <div class="booking-details-card bg-light rounded-3 p-3">
+            <div class="resource-icon-large mb-3">
+              <i class="bi bi-building fs-1 text-primary"></i>
+            </div>
+            <h4 class="fw-bold mb-2">{{ selectedBooking?.resource?.name || 'Loading...' }}</h4>
+            <div class="booking-info mt-3">
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="info-item">
+                    <i class="bi bi-calendar3 text-primary me-2"></i>
+                    <span class="text-muted small">Date</span>
+                    <div class="fw-semibold">{{ selectedBooking?.start_time | date:'EEEE, MMMM d, y' }}</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="info-item">
+                    <i class="bi bi-clock text-primary me-2"></i>
+                    <span class="text-muted small">Time</span>
+                    <div class="fw-semibold">{{ selectedBooking?.start_time | date:'h:mm a' }} - {{ selectedBooking?.end_time | date:'h:mm a' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+              <div class="info-item">
+                <i class="bi bi-card-heading text-primary me-2"></i>
+                <span class="text-muted small">Title</span>
+                <div class="fw-semibold">{{ selectedBooking?.title || 'Untitled Booking' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="alert alert-warning border-0" style="background: #fef3c7;">
+          <div class="d-flex">
+            <i class="bi bi-info-circle-fill fs-5 me-3" style="color: #f59e0b;"></i>
+            <div class="small">
+              <strong>Cancellation Policy:</strong><br>
+              • Cancelling this booking will permanently remove it<br>
+              • You can rebook the same time slot if available<br>
+              • This action cannot be reversed
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="confirmCancel" #confirmCheck>
+          <label class="form-check-label text-muted" for="confirmCancel">
+            I understand that this action cannot be undone and I want to cancel this booking
+          </label>
+        </div>
+      </div>
+      
+      <div class="modal-footer border-0 pb-4 px-4">
+        <button type="button" class="btn btn-secondary px-4" (click)="closeModal('cancelBookingModal')">
+          <i class="bi bi-arrow-left me-2"></i>Go Back
+        </button>
+        <button type="button" class="btn px-4" 
+                style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none;"
+                (click)="confirmCancel()" 
+                [disabled]="!confirmCheck.checked || isCancelling">
+          <span *ngIf="!isCancelling">
+            <i class="bi bi-check-circle me-2"></i>Yes, Cancel Booking
+          </span>
+          <span *ngIf="isCancelling">
+            <span class="spinner-border spinner-border-sm me-2"></span>Cancelling...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .hover-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important;
+  }
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .resource-icon-large {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  
+  .info-item {
+    text-align: left;
+  }
+  
+  .info-item i {
+    width: 20px;
+  }
+  
+  .info-item .text-muted {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .modal.fade .modal-dialog {
+    transform: scale(0.8);
+    transition: transform 0.2s ease-out;
+  }
+  
+  .modal.fade.show .modal-dialog {
+    transform: scale(1);
+  }
+  
+  .toast {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+</style>

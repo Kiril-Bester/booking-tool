@@ -1,0 +1,118 @@
+<form (ngSubmit)="onSubmit()" #resourceForm="ngForm">
+  <!-- Resource Name -->
+  <div class="mb-4">
+    <label class="form-label fw-semibold text-dark">
+      <i class="bi bi-tag-fill me-2 text-primary"></i>Resource Name <span class="text-danger">*</span>
+    </label>
+    <input type="text" 
+           class="form-control form-control-lg rounded-3" 
+           [class.is-invalid]="submitted && !formData.name"
+           [(ngModel)]="formData.name" 
+           name="name" 
+           placeholder="e.g., Conference Room A, Projector, Laptop"
+           required>
+    <div class="invalid-feedback">Please enter a resource name.</div>
+    <small class="text-muted">Choose a clear, descriptive name for your resource</small>
+  </div>
+  
+  <!-- Description -->
+  <div class="mb-4">
+    <label class="form-label fw-semibold text-dark">
+      <i class="bi bi-file-text-fill me-2 text-primary"></i>Description
+    </label>
+    <textarea class="form-control rounded-3" 
+              rows="4" 
+              [(ngModel)]="formData.description" 
+              name="description"
+              placeholder="Describe the resource, its features, and any special requirements..."></textarea>
+    <small class="text-muted">Optional: Add details about capacity, equipment, or usage guidelines</small>
+  </div>
+  
+  <!-- Availability Hours -->
+  <div class="card bg-light border-0 rounded-3 mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-clock-history me-2 text-primary"></i>Operating Hours
+      </h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Available From <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-sun-fill text-warning"></i>
+            </span>
+            <input type="time" 
+                   class="form-control" 
+                   [class.is-invalid]="submitted && !formData.availability_start"
+                   [(ngModel)]="formData.availability_start" 
+                   name="availability_start" 
+                   required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Available To <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-moon-fill text-primary"></i>
+            </span>
+            <input type="time" 
+                   class="form-control" 
+                   [class.is-invalid]="submitted && !formData.availability_end"
+                   [(ngModel)]="formData.availability_end" 
+                   name="availability_end" 
+                   required>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Available Days -->
+  <div class="card bg-light border-0 rounded-3 mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-calendar-week me-2 text-primary"></i>Available Days <span class="text-danger">*</span>
+      </h6>
+      <div class="d-flex flex-wrap gap-2">
+        <button *ngFor="let day of days" 
+                type="button"
+                class="btn rounded-pill px-3 py-2 fw-semibold"
+                [class.btn-primary]="isDaySelected(day.value)"
+                [class.btn-outline-secondary]="!isDaySelected(day.value)"
+                (click)="toggleDay(day.value)">
+          <i class="bi" [class.bi-check-circle-fill]="isDaySelected(day.value)" [class.bi-circle]="!isDaySelected(day.value)"></i>
+          {{ day.label }}
+        </button>
+      </div>
+      <small class="text-muted d-block mt-2">Select the days when this resource is available for booking</small>
+    </div>
+  </div>
+  
+  <!-- Preview Section -->
+  <div class="alert alert-info rounded-3 mb-4" *ngIf="formData.name && formData.availability_start && formData.availability_end">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+      <div>
+        <strong class="d-block">Resource Summary</strong>
+        <small>{{ formData.name }} will be available on {{ getSelectedDaysText() }} from {{ formData.availability_start }} to {{ formData.availability_end }}</small>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Form Actions -->
+  <div class="d-flex gap-3 pt-2">
+    <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill shadow-sm" [disabled]="isSubmitting">
+      <span *ngIf="!isSubmitting">
+        <i class="bi" [class.bi-plus-circle]="!isEdit" [class.bi-check-circle]="isEdit"></i>
+        {{ isEdit ? 'Update Resource' : 'Create Resource' }}
+      </span>
+      <span *ngIf="isSubmitting">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        {{ isEdit ? 'Updating...' : 'Creating...' }}
+      </span>
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-4" data-bs-dismiss="modal">
+      <i class="bi bi-x-circle me-2"></i>Cancel
+    </button>
+  </div>
+</form>
